@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kontrol Paneli · Cephe Kapışması</title>
+  <link rel="stylesheet" href="/panel.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <header class="ust">
+    <div class="marka">
+      <span class="logo" aria-hidden="true">⚔️</span>
+      <div>
+        <h1>Cephe Kapışması</h1>
+        <p class="alt">TikTok LIVE takım savaşı · kontrol paneli (yalnızca bu bilgisayardan açılır)</p>
+      </div>
+    </div>
+    <div class="rozetler">
+      <span id="baglantiRozet" class="rozet">Bağlı değil</span>
+      <span id="demoRozet" class="rozet demo" hidden>DEMO AÇIK</span>
+    </div>
+  </header>
+
+  <main class="izgara">
+    <section class="kart genis" aria-labelledby="b0">
+      <h2 id="b0">Yayın öncesi kontrol</h2>
+      <ul class="kontrol" id="kontrolListesi">
+        <li data-k="sunucu">Oyun sunucusu çalışıyor</li>
+        <li data-k="ekran">Oyun ekranı açık (LIVE Studio / OBS / pencere)</li>
+        <li data-k="sayfa">Yayın sayfası adresi kayıtlı (LIVE Studio için)</li>
+        <li data-k="tiktok">TikTok canlı yayınına bağlı</li>
+        <li data-k="demo">Demo kapalı</li>
+      </ul>
+    </section>
+    <section class="kart" aria-labelledby="b1">
+      <h2 id="b1">1 · TikTok bağlantısı</h2>
+      <p class="ipucu">Önce TikTok'ta canlı yayını aç, sonra burada kullanıcı adını yazıp Bağlan'a bas.</p>
+      <form id="baglanForm" class="satir">
+        <label class="gizli" for="kullanici">TikTok kullanıcı adı</label>
+        <input id="kullanici" name="kullanici" placeholder="@kullaniciadi" autocomplete="off" spellcheck="false" maxlength="60" />
+        <button type="submit" class="dugme ana" id="baglanDugme">Bağlan</button>
+        <button type="button" class="dugme" id="kesDugme">Kes</button>
+      </form>
+      <dl class="bilgi">
+        <div><dt>Durum</dt><dd id="durumMetin">—</dd></div>
+        <div><dt>İzleyici</dt><dd id="izleyiciMetin">0</dd></div>
+      </dl>
+      <p id="hataMetin" class="hata" role="alert" hidden></p>
+      <details class="not">
+        <summary>Bağlantı nasıl çalışıyor?</summary>
+        <p>TikTok şifren istenmez. Herkese açık yayının yorum, beğeni ve hediyeleri kullanıcı adıyla okunur.
+          Bunun için resmî olmayan bir kütüphane kullanılır; kütüphane bağlantı imzası almak için yayıncı adını
+          Euler Stream adlı aracı servise gönderir. TikTok bir şeyi değiştirirse bağlantı geçici olarak bozulabilir.</p>
+      </details>
+    </section>
+
+    <section class="kart" aria-labelledby="b2">
+      <h2 id="b2">2 · Yayına ekle</h2>
+      <h3>TikTok LIVE Studio (net görüntü, Netlify ile)</h3>
+      <ol class="adimlar">
+        <li>Oyun klasöründeki <b>yayin-sayfasi-hazirla.bat</b> dosyasını aç; açılan <b>yayin-sayfasi</b> klasörünü Netlify Drop sayfasına sürükle</li>
+        <li>Netlify'ın verdiği adresi (https://…netlify.app) buraya yapıştır ve Kaydet:</li>
+      </ol>
+      <form id="yayinForm" class="satir">
+        <label class="gizli" for="yayinSayfasi">Yayın sayfası adresi</label>
+        <input id="yayinSayfasi" placeholder="https://ornek.netlify.app" autocomplete="off" spellcheck="false" maxlength="200" />
+        <button type="submit" class="dugme ana">Kaydet</button>
+      </form>
+      <p class="ipucu" id="yayinDurum"></p>
+      <ol class="adimlar" start="3">
+        <li>LIVE Studio → Studio görünümü <b>dikey</b> → Kaynak ekle → <b>Bağlantı</b> → aynı adres; "Özel çözünürlük" 1080 × 1920, "Sesi aç" ve "Her zaman aktif tut" açık</li>
+      </ol>
+      <p class="ipucu">Bu sayfa yalnızca oyun olaylarını okuyabilir; bağlanma, ayar ve demo yalnızca bu bilgisayardan yapılır.
+        Netlify'daki sayfa herkese açıktır ama içinde gizli bilgi yoktur; başka biri açarsa kendi bilgisayarındaki sunucuyu arar, seninkine ulaşamaz.</p>
+      <h3>Yedek: pencere yakalama</h3>
+      <ol class="adimlar">
+        <li><b>oyun-penceresi.bat</b> ile oyunu ayrı pencerede aç → LIVE Studio → Kaynak ekle → <b>Pencere yakalama</b> → "Cephe Kapışması · Oyun ekranı" (görüntü daha az net)</li>
+      </ol>
+      <h3>OBS</h3>
+      <ol class="adimlar">
+        <li>Kaynaklar → <b>+</b> → <b>Tarayıcı</b>, URL: <code id="obsUrl">http://127.0.0.1:5077/oyun</code> <button type="button" class="dugme kucuk" id="kopyala">Kopyala</button></li>
+        <li>Genişlik <b>1080</b>, yükseklik <b>1920</b>; "OBS ile sesi kontrol et" açık</li>
+      </ol>
+      <a class="dugme" href="/oyun" target="_blank" rel="noopener">Oyunu yeni sekmede aç</a>
+    </section>
+
+    <section class="kart genis" aria-labelledby="b3">
+      <h2 id="b3">3 · Oyun durumu</h2>
+      <div class="skor" id="skor">
+        <div class="takim" id="t0"><span class="tad">Kırmızı</span><span class="tgal">0</span><span class="task">0 asker</span><span class="tkap"></span></div>
+        <div class="orta">
+          <div class="tur" id="turMetin">Oyun ekranı açık değil</div>
+          <div class="cephe" aria-hidden="true"><span id="cepheCubuk"></span></div>
+        </div>
+        <div class="takim" id="t1"><span class="tad">Mavi</span><span class="tgal">0</span><span class="task">0 asker</span><span class="tkap"></span></div>
+      </div>
+      <div class="satir sar">
+        <button type="button" class="dugme" data-komut="duraklat">Duraklat</button>
+        <button type="button" class="dugme" data-komut="devam">Devam</button>
+        <button type="button" class="dugme" data-komut="turuBitir">Turu şimdi bitir</button>
+        <button type="button" class="dugme" data-komut="yeniTur">Yeni tur başlat</button>
+        <button type="button" class="dugme" data-komut="cilginAn">🔥 Çılgın An</button>
+        <button type="button" class="dugme tehlike" data-komut="sifirla" data-onay="Arena ve kaptan sıralaması sıfırlansın mı?">Arenayı sıfırla</button>
+        <button type="button" class="dugme tehlike" data-komut="skorSifirla" data-onay="Takımların galibiyet sayısı sıfırlansın mı?">Galibiyetleri sıfırla</button>
+      </div>
+    </section>
+
+    <section class="kart" aria-labelledby="b4">
+      <h2 id="b4">4 · Prova (demo)</h2>
+      <p class="ipucu">Demo, sahte izleyicilerle oyunu dener. Ekranda <b>DEMO</b> yazar.
+        <b>Canlı yayında kapalı tut:</b> sahte hediye göstermek izleyiciyi yanıltır. Bağlanınca kendiliğinden kapanır.</p>
+      <label class="anahtar"><input type="checkbox" id="demoKutu" /> <span>Demo akışı</span></label>
+      <h3>Tek olay gönder</h3>
+      <div class="satir sar">
+        <input id="testAd" value="Test İzleyici" maxlength="24" aria-label="Test izleyici adı" />
+      </div>
+      <div class="satir sar">
+        <button type="button" class="dugme kucuk" data-test='{"tur":"begeni","adet":3}'>❤️ Beğen (katıl)</button>
+        <button type="button" class="dugme kucuk" data-test='{"tur":"yorum","metin":"1"}'>"1" yaz</button>
+        <button type="button" class="dugme kucuk" data-test='{"tur":"yorum","metin":"2"}'>"2" yaz</button>
+        <button type="button" class="dugme kucuk" data-test='{"tur":"takip"}'>➕ Takip</button>
+        <button type="button" class="dugme kucuk" data-test='{"tur":"paylasim"}'>🔁 Paylaşım</button>
+      </div>
+      <div class="satir sar" id="hediyeDugmeler"></div>
+    </section>
+
+    <section class="kart" aria-labelledby="b5">
+      <h2 id="b5">5 · Ayarlar</h2>
+      <form id="ayarForm" class="ayarlar">
+        <fieldset>
+          <legend>Hediyeler (jeton)</legend>
+          <div class="satir"><label for="tufekJeton">🔫 Tüfek (jeton)</label><input id="tufekJeton" type="number" min="2" step="1" /><span class="cevrim" id="tufekTLyazi"></span></div>
+          <div class="satir"><label for="bombaJeton">💣 Bomba (jeton)</label><input id="bombaJeton" type="number" min="3" step="1" /><span class="cevrim" id="bombaTLyazi"></span></div>
+          <div class="satir"><label for="bombaKisi">Bomba kaç kişi düşürür</label><input id="bombaKisi" type="number" min="1" max="30" /></div>
+          <div class="satir"><label for="ejderhaJeton">🐉 Ejderha (jeton)</label><input id="ejderhaJeton" type="number" min="4" step="1" /><span class="cevrim" id="ejderhaTLyazi"></span></div>
+          <div class="satir"><label for="jetonTL">1 jeton ≈ TL (yalnızca bilgi)</label><input id="jetonTL" type="number" min="0.01" max="10" step="0.01" /></div>
+          <p class="ipucu" id="kademeOzeti"></p>
+          <p class="ipucu">Tüfek eşiğinin her katı 1 kişi düşürür (Çay 50 = 2 kişi). Bombadan sonra da her tüfek eşiği +1 kişi.
+            Tüfek eşiğinin altındaki hediyeler 🛡️ kalkan verir, düşen bir arkadaşı diriltir ve birikip mermiye dönüşür.
+            Kalkanlı askere gelen atış kalkanı kırar. Ekranda jeton ve hediye resimleri görünür.</p>
+        </fieldset>
+        <fieldset>
+          <legend>Takımlar</legend>
+          <div class="satir"><label for="t0ad">1. takım</label><input id="t0ad" maxlength="14" /><input id="t0renk" type="color" aria-label="1. takım rengi" /></div>
+          <div class="satir"><label for="t1ad">2. takım</label><input id="t1ad" maxlength="14" /><input id="t1renk" type="color" aria-label="2. takım rengi" /></div>
+          <p class="ipucu">Kulüp logosu kullanma; yalnızca ad ve renk.</p>
+        </fieldset>
+        <fieldset>
+          <legend>Süreler ve sınırlar</legend>
+          <div class="satir"><label for="hazirlik">Hazırlık (sn)</label><input id="hazirlik" type="number" min="5" max="60" /></div>
+          <div class="satir"><label for="turSuresi">Savaş (sn)</label><input id="turSuresi" type="number" min="60" max="600" step="10" /></div>
+          <div class="satir"><label for="araSuresi">Tur arası (sn)</label><input id="araSuresi" type="number" min="8" max="60" /></div>
+          <div class="satir"><label for="donusSuresi">Düşen kaç sn sonra döner</label><input id="donusSuresi" type="number" min="0" max="60" /></div>
+          <div class="satir"><label for="maksAsker">Takım başına asker</label><input id="maksAsker" type="number" min="10" max="60" step="5" /></div>
+        </fieldset>
+        <fieldset>
+          <legend>Seçenekler</legend>
+          <div class="satir"><label for="oyunHizi">Ön saf dövüş hızı</label>
+            <select id="oyunHizi"><option value="yavas">Yavaş</option><option value="normal">Normal</option><option value="hizli">Hızlı</option></select></div>
+          <div class="satir"><label for="profilFoto">Profil fotoğrafı</label>
+            <select id="profilFoto"><option value="hepsi">Tüm askerlerde (TikTok profil fotoğrafı)</option><option value="kaptan">Yalnızca kaptanlarda</option><option value="yok">Hiç gösterme</option></select></div>
+          <div class="satir"><label for="begeniHedefi">Beğeni hedefi (0 = kapalı)</label><input id="begeniHedefi" type="number" min="0" max="100000" step="100" /></div>
+          <div class="satir"><label for="botSayisi">Takım başına en az asker (eksiği bot)</label><input id="botSayisi" type="number" min="0" max="20" /></div>
+          <label class="anahtar"><input type="checkbox" id="botlar" /> <span>🤖 İzleyici azken boş takımları botlarla doldur</span></label>
+          <label class="anahtar"><input type="checkbox" id="otoSavas" /> <span>Askerler kendi kendine dövüşsün</span></label>
+          <label class="anahtar"><input type="checkbox" id="kalkanDirilis" /> <span>Küçük hediye: kalkan + diriliş</span></label>
+          <label class="anahtar"><input type="checkbox" id="kaptanTaci" /> <span>Kaptana taç: bir vuruşa fazladan dayanır</span></label>
+          <label class="anahtar"><input type="checkbox" id="cilginAn" /> <span>Çılgın An: 60 sn'de bir 10 sn çift hasar</span></label>
+          <label class="anahtar"><input type="checkbox" id="adSuzgeci" /> <span>Küfürlü adları "İzleyici" olarak göster</span></label>
+          <label class="anahtar"><input type="checkbox" id="ses" /> <span>Ses efektleri</span></label>
+        </fieldset>
+        <div class="satir"><button type="submit" class="dugme ana">Kaydet</button><span id="kayitMetin" class="ipucu" role="status"></span></div>
+      </form>
+    </section>
+
+    <section class="kart genis" aria-labelledby="b6">
+      <h2 id="b6">Canlı akış</h2>
+      <ul id="akis" class="akis" aria-live="polite"></ul>
+    </section>
+  </main>
+
+  <script src="/panel.js"></script>
+</body>
+</html>
