@@ -13,7 +13,7 @@
       <span class="logo" aria-hidden="true">⚔️</span>
       <div>
         <h1>Cephe Kapışması</h1>
-        <p class="alt">TikTok LIVE takım savaşı · kontrol paneli (yalnızca bu bilgisayardan açılır)</p>
+        <p class="alt">TikTok LIVE oyunları: takım savaşı ve futbol kupası · kontrol paneli (yalnızca bu bilgisayardan açılır)</p>
       </div>
     </div>
     <div class="rozetler">
@@ -32,6 +32,14 @@
         <li data-k="tiktok">TikTok canlı yayınına bağlı</li>
         <li data-k="demo">Demo kapalı</li>
       </ul>
+    </section>
+    <section class="kart genis" aria-labelledby="bOyun">
+      <h2 id="bOyun">Oyun seçimi</h2>
+      <div class="oyunlar" role="radiogroup" aria-labelledby="bOyun">
+        <label class="oyun-secim"><input type="radio" name="oyunTuru" value="cephe" /> <span><b>⚔️ Cephe Kapışması</b><small>Takım savaşı: beğeni = asker, hediye = silah</small></span></label>
+        <label class="oyun-secim"><input type="radio" name="oyunTuru" value="futbol" /> <span><b>⚽ Futbol Kupası</b><small>24 takımlı kupa: beğeni / takım adı = oyuncu, hediye = koruma, süper şut, penaltı, gol</small></span></label>
+      </div>
+      <p class="ipucu" id="oyunDurum">Seçince yayındaki oyun ekranı kendiliğinden değişir; LIVE Studio / OBS'te bir şey değiştirmen gerekmez.</p>
     </section>
     <section class="kart" aria-labelledby="b1">
       <h2 id="b1">1 · TikTok bağlantısı</h2>
@@ -128,7 +136,42 @@
     <section class="kart" aria-labelledby="b5">
       <h2 id="b5">5 · Ayarlar</h2>
       <form id="ayarForm" class="ayarlar">
-        <fieldset>
+        <fieldset class="sadeceFutbol" hidden>
+          <legend>⚽ Futbol Kupası</legend>
+          <div class="satir"><label for="fbKupaAdi">Kupanın adı</label><input id="fbKupaAdi" maxlength="24" /></div>
+          <div class="satir"><label for="fbKupaBoyu">Kupa düzeni</label>
+            <select id="fbKupaBoyu">
+              <option value="tum">24 takımın hepsi (8 takım ilk turu bay geçer · 24 maç, ~75 dk)</option>
+              <option value="16">Her kupada 16 takım, kurayla (16 maç, ~50 dk)</option>
+              <option value="8">Her kupada 8 takım, kurayla (8 maç, ~25 dk)</option>
+            </select></div>
+          <p class="ipucu">Kupa düzeni değişikliği bir sonraki kupada geçerli olur (hemen istersen "Kupayı sıfırla").</p>
+          <div class="satir"><label for="fbKoruma">🧤 Koruma (jeton)</label><input id="fbKoruma" type="number" min="1" step="1" /><span class="cevrim" id="fbKorumaTL"></span></div>
+          <div class="satir"><label for="fbSuperSut">🔥 Süper şut (jeton)</label><input id="fbSuperSut" type="number" min="2" step="1" /><span class="cevrim" id="fbSuperSutTL"></span></div>
+          <div class="satir"><label for="fbPenalti">🎯 Penaltı (jeton)</label><input id="fbPenalti" type="number" min="3" step="1" /><span class="cevrim" id="fbPenaltiTL"></span></div>
+          <div class="satir"><label for="fbGol">⚡ Direkt gol (jeton)</label><input id="fbGol" type="number" min="4" step="1" /><span class="cevrim" id="fbGolTL"></span></div>
+          <p class="ipucu" id="fbKademe"></p>
+          <p class="ipucu">Koruma eşiğinin altındaki hediyeler takıma güç verir ve birikip süper şuta dönüşür.
+            🧤 Koruma: kaleciye kesin kurtarış hakkı; sıradaki isabetli şutu (normal, süper şut, penaltı) mutlaka kurtarır, en fazla 3 hak birikir.
+            Direkt gol durdurulamaz; eşiğin her katı bir gol (en fazla 3). Hediye atan sahada değilse hemen girer.</p>
+          <div class="satir"><label for="fbMacSuresi">Maç süresi (sn, ekranda 90')</label><input id="fbMacSuresi" type="number" min="60" max="600" step="10" /></div>
+          <div class="satir"><label for="fbHazirlik">Maç öncesi katılma (sn)</label><input id="fbHazirlik" type="number" min="5" max="60" /></div>
+          <div class="satir"><label for="fbAra">Maç arası (sn)</label><input id="fbAra" type="number" min="8" max="60" /></div>
+          <div class="satir"><label for="fbSaha">Sahada oyuncu (kaleci dahil)</label><input id="fbSaha" type="number" min="3" max="11" /></div>
+          <label class="anahtar"><input type="checkbox" id="fbHava" /> <span>Hava durumu (yağmur, kar, sis, rüzgar)</span></label>
+          <label class="anahtar"><input type="checkbox" id="fbSurpriz" /> <span>Sürpriz olaylar (köpek, ışıklar, yeni top, taraftar, rüzgar)</span></label>
+          <label class="anahtar"><input type="checkbox" id="spiker" /> <span>🎙️ Spiker: maçı sesli anlatsın (gol atanın adı, skor, geri sayım, ataklar)</span></label>
+          <div class="satir"><label for="spikerSes">Spiker ses düzeyi</label><input id="spikerSes" type="range" min="0" max="100" step="5" /><output id="spikerSesYazi" for="spikerSes"></output></div>
+          <p class="ipucu">Spiker bilgisayarın kendi Türkçe sesini (Windows "Tolga") kullanır: internet gerekmez, izleyici adları dışarı gönderilmez.
+            Sesi duymak için oyun ekranında ses açık olmalı (LIVE Studio'da "Sesi aç", OBS'te "OBS ile sesi kontrol et").</p>
+          <details class="not">
+            <summary>Takımlar: ad · kısa ad · 1. renk · 2. renk (açmak için tıkla)</summary>
+            <div id="fbTakimlar"></div>
+          </details>
+          <p class="ipucu">Kulüp logosu kullanılmaz; ekranda yalnızca ad, kısa ad ve renkler görünür. Beğenen izleyici oyuna girer;
+            takımın kısa adını (ör. GS) ya da adını yazan o takıma geçer (maç sırasında 30 saniyede bir). "1" ve "2" de çalışır.</p>
+        </fieldset>
+        <fieldset class="sadeceCephe">
           <legend>Hediyeler (jeton)</legend>
           <div class="satir"><label for="tufekJeton">🔫 Tüfek (jeton)</label><input id="tufekJeton" type="number" min="2" step="1" /><span class="cevrim" id="tufekTLyazi"></span></div>
           <div class="satir"><label for="bombaJeton">💣 Bomba (jeton)</label><input id="bombaJeton" type="number" min="3" step="1" /><span class="cevrim" id="bombaTLyazi"></span></div>
@@ -140,13 +183,13 @@
             Tüfek eşiğinin altındaki hediyeler 🛡️ kalkan verir, düşen bir arkadaşı diriltir ve birikip mermiye dönüşür.
             Kalkanlı askere gelen atış kalkanı kırar. Ekranda jeton ve hediye resimleri görünür.</p>
         </fieldset>
-        <fieldset>
+        <fieldset class="sadeceCephe">
           <legend>Takımlar</legend>
           <div class="satir"><label for="t0ad">1. takım</label><input id="t0ad" maxlength="14" /><input id="t0renk" type="color" aria-label="1. takım rengi" /></div>
           <div class="satir"><label for="t1ad">2. takım</label><input id="t1ad" maxlength="14" /><input id="t1renk" type="color" aria-label="2. takım rengi" /></div>
           <p class="ipucu">Kulüp logosu kullanma; yalnızca ad ve renk.</p>
         </fieldset>
-        <fieldset>
+        <fieldset class="sadeceCephe">
           <legend>Süreler ve sınırlar</legend>
           <div class="satir"><label for="hazirlik">Hazırlık (sn)</label><input id="hazirlik" type="number" min="5" max="60" /></div>
           <div class="satir"><label for="turSuresi">Savaş (sn)</label><input id="turSuresi" type="number" min="60" max="600" step="10" /></div>
@@ -156,17 +199,17 @@
         </fieldset>
         <fieldset>
           <legend>Seçenekler</legend>
-          <div class="satir"><label for="oyunHizi">Ön saf dövüş hızı</label>
+          <div class="satir sadeceCephe"><label for="oyunHizi">Ön saf dövüş hızı</label>
             <select id="oyunHizi"><option value="yavas">Yavaş</option><option value="normal">Normal</option><option value="hizli">Hızlı</option></select></div>
           <div class="satir"><label for="profilFoto">Profil fotoğrafı</label>
             <select id="profilFoto"><option value="hepsi">Tüm askerlerde (TikTok profil fotoğrafı)</option><option value="kaptan">Yalnızca kaptanlarda</option><option value="yok">Hiç gösterme</option></select></div>
-          <div class="satir"><label for="begeniHedefi">Beğeni hedefi (0 = kapalı)</label><input id="begeniHedefi" type="number" min="0" max="100000" step="100" /></div>
-          <div class="satir"><label for="botSayisi">Takım başına en az asker (eksiği bot)</label><input id="botSayisi" type="number" min="0" max="20" /></div>
+          <div class="satir"><label for="begeniHedefi">Beğeni hedefi (0 = kapalı; futbolda 2 top)</label><input id="begeniHedefi" type="number" min="0" max="100000" step="100" /></div>
+          <div class="satir"><label for="botSayisi">Takım başına en az oyuncu (eksiği bot)</label><input id="botSayisi" type="number" min="0" max="20" /></div>
           <label class="anahtar"><input type="checkbox" id="botlar" /> <span>🤖 İzleyici azken boş takımları botlarla doldur</span></label>
-          <label class="anahtar"><input type="checkbox" id="otoSavas" /> <span>Askerler kendi kendine dövüşsün</span></label>
-          <label class="anahtar"><input type="checkbox" id="kalkanDirilis" /> <span>Küçük hediye: kalkan + diriliş</span></label>
-          <label class="anahtar"><input type="checkbox" id="kaptanTaci" /> <span>Kaptana taç: bir vuruşa fazladan dayanır</span></label>
-          <label class="anahtar"><input type="checkbox" id="cilginAn" /> <span>Çılgın An: 60 sn'de bir 10 sn çift hasar</span></label>
+          <label class="anahtar sadeceCephe"><input type="checkbox" id="otoSavas" /> <span>Askerler kendi kendine dövüşsün</span></label>
+          <label class="anahtar sadeceCephe"><input type="checkbox" id="kalkanDirilis" /> <span>Küçük hediye: kalkan + diriliş</span></label>
+          <label class="anahtar sadeceCephe"><input type="checkbox" id="kaptanTaci" /> <span>Kaptana taç: bir vuruşa fazladan dayanır</span></label>
+          <label class="anahtar sadeceCephe"><input type="checkbox" id="cilginAn" /> <span>Çılgın An: 60 sn'de bir 10 sn çift hasar</span></label>
           <label class="anahtar"><input type="checkbox" id="adSuzgeci" /> <span>Küfürlü adları "İzleyici" olarak göster</span></label>
           <label class="anahtar"><input type="checkbox" id="ses" /> <span>Ses efektleri</span></label>
         </fieldset>

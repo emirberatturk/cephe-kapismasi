@@ -86,6 +86,13 @@ function oturumuYukle() {
   } catch { /* bozuk kayıt: yok say */ }
 }
 
+// Panelde başka oyun seçildiyse o oyunun sayfasına geç (adres parametreleri korunur)
+function oyunDegisti(a) {
+  if (a?.oyunTuru !== 'futbol') return false;
+  location.replace('futbol.html' + location.search);
+  return true;
+}
+
 // ------------------------------------------------------------ sunucu bağlantısı
 function baglan() {
   const kaynak = new EventSource(SUNUCU + '/olaylar');
@@ -98,6 +105,7 @@ function baglan() {
   };
   kaynak.addEventListener('hazir', (e) => {
     const d = JSON.parse(e.data);
+    if (oyunDegisti(d.ayarlar)) return;
     demoAcik = Boolean(d.demo);
     if (!motor) baslat(d.ayarlar);
     else motor.ayarlariGuncelle(d.ayarlar);
@@ -108,6 +116,7 @@ function baglan() {
   });
   kaynak.addEventListener('ayarlar', (e) => {
     const a = JSON.parse(e.data);
+    if (oyunDegisti(a)) return;
     if (motor) motor.ayarlariGuncelle(a);
     ses.acik = a.ses;
   });

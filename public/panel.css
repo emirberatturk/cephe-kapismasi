@@ -102,3 +102,12 @@ output { min-width: 48px; text-align: right; font-weight: 700; }
 .uyari { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.45); color: #fcd34d; border-radius: 8px; padding: 8px 10px; font-size: 13px; margin-bottom: 8px; }
 .cevrim { color: #fde68a; font-size: 13px; font-weight: 700; min-width: 90px; }
 .tkap { color: #fde68a; font-size: 12px; margin-top: 4px; text-align: center; }
+.oyunlar { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.oyun-secim { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 2px solid var(--kenar); border-radius: 12px; background: #0f1420; cursor: pointer; }
+.oyun-secim:has(input:checked) { border-color: var(--ana); background: rgba(34,197,94,.08); }
+.oyun-secim input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--ana); }
+.oyun-secim span { display: flex; flex-direction: column; gap: 2px; }
+.oyun-secim small { color: var(--soluk); font-size: 13px; }
+.fb-takim { display: grid; grid-template-columns: 1fr 76px 44px 44px; gap: 6px; margin: 6px 0; }
+.fb-takim input:not([type=color]) { max-width: none; }
+[hidden] { display: none !important; }

@@ -18,10 +18,16 @@ const DOSYALAR = [
   ['oyun/motor.js', 'oyun/motor.js'],
   ['oyun/cizim.js', 'oyun/cizim.js'],
   ['oyun/ses.js', 'oyun/ses.js'],
+  ['futbol.html', 'futbol.html'],
+  ['futbol/ana.js', 'futbol/ana.js'],
+  ['futbol/motor.js', 'futbol/motor.js'],
+  ['futbol/cizim.js', 'futbol/cizim.js'],
+  ['futbol/spiker.js', 'futbol/spiker.js'],
 ];
 
 fs.rmSync(HEDEF, { recursive: true, force: true });
 fs.mkdirSync(path.join(HEDEF, 'oyun'), { recursive: true });
+fs.mkdirSync(path.join(HEDEF, 'futbol'), { recursive: true });
 for (const [kaynak, hedef] of DOSYALAR) fs.copyFileSync(path.join(KOK, 'public', kaynak), path.join(HEDEF, hedef));
 
 const csp = [

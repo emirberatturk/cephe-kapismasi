@@ -10,6 +10,7 @@ import { TikTokYoneticisi, kullaniciAdiTemizle } from './src/tiktok.js';
 import { ayarlariOku, ayarlariKaydet, ayarlariDogrula } from './src/ayarlar.js';
 import { DemoAkisi } from './src/demo.js';
 import { HediyeKatalogu } from './src/hediyeler.js';
+import { Seslendirici, spikerMetni } from './src/spiker.js';
 
 const KOK = path.dirname(fileURLToPath(import.meta.url));
 const GENEL = path.join(KOK, 'public');
@@ -40,7 +41,7 @@ const GUVENLIK_BASLIKLARI = {
   'Cross-Origin-Resource-Policy': 'same-origin',
 };
 
-export function sunucuKur({ tiktok = new TikTokYoneticisi(), ayarDosyasi, hediyeDosyasi } = {}) {
+export function sunucuKur({ tiktok = new TikTokYoneticisi(), ayarDosyasi, hediyeDosyasi, seslendirici = new Seslendirici() } = {}) {
   let ayarlar = ayarlariOku(ayarDosyasi);
   const katalog = new HediyeKatalogu(hediyeDosyasi);
   const demo = new DemoAkisi();
@@ -135,6 +136,7 @@ export function sunucuKur({ tiktok = new TikTokYoneticisi(), ayarDosyasi, hediye
     let yol = decodeURIComponent(url.pathname);
     if (yol === '/' || yol === '/panel') yol = '/panel.html';
     if (yol === '/oyun') yol = '/oyun.html';
+    if (yol === '/futbol') yol = '/futbol.html';
     const tam = path.resolve(GENEL, '.' + yol);
     if (!tam.startsWith(GENEL + path.sep)) return gonder(res, 403, 'Yasak');
     const tur = TURLER[path.extname(tam).toLowerCase()];
@@ -160,12 +162,12 @@ export function sunucuKur({ tiktok = new TikTokYoneticisi(), ayarDosyasi, hediye
     const yontem = req.method;
 
     // İnternetteki yayın sayfası (ör. Netlify, LIVE Studio'nun "Bağlantı" kaynağı için):
-    // yalnızca ayarlarda kayıtlı TEK adres; yalnızca olay akışını okur ve skor özetini gönderir.
+    // yalnızca ayarlarda kayıtlı TEK adres; yalnızca olay akışını okur, skor özetini gönderir ve spiker sesi ister.
     // Bağlanma, ayar, demo, komut gibi her şey yine yalnızca bu bilgisayardan.
     let uzak = null;
     if (origin && !IZINLI_HOSTLAR.has(origin.replace(/^https?:\/\//i, '').toLowerCase())) {
       const kayitli = ayarlar.yayinSayfasi;
-      const izinliYol = url.pathname === '/olaylar' || url.pathname === '/api/oyun-durumu';
+      const izinliYol = url.pathname === '/olaylar' || url.pathname === '/api/oyun-durumu' || url.pathname === '/api/spiker';
       if (!kayitli || origin.toLowerCase() !== kayitli || !izinliYol) return reddet(403, 'Yasak kaynak');
       uzak = { 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Cross-Origin-Resource-Policy': 'cross-origin' };
       if (yontem === 'OPTIONS') {
@@ -178,7 +180,7 @@ export function sunucuKur({ tiktok = new TikTokYoneticisi(), ayarDosyasi, hediye
         });
         return res.end();
       }
-      const izinli = (yontem === 'GET' && url.pathname === '/olaylar') || (yontem === 'POST' && url.pathname === '/api/oyun-durumu');
+      const izinli = (yontem === 'GET' && url.pathname === '/olaylar') || (yontem === 'POST' && (url.pathname === '/api/oyun-durumu' || url.pathname === '/api/spiker'));
       if (!izinli) return reddet(403, 'Yasak kaynak');
     }
 
@@ -254,6 +256,20 @@ export function sunucuKur({ tiktok = new TikTokYoneticisi(), ayarDosyasi, hediye
         yayinla('oyun', sonOyunDurumu);
         return gonder(res, 200, { ok: true }, uzak || {});
       }
+      case 'POST /api/spiker': {
+        // Oyun ekranı spiker cümlesini ister; bilgisayarın kendi sesiyle WAV döner (metin dışarı gitmez)
+        const ek = uzak || {};
+        if (!ayarlar.spiker) return gonder(res, 403, { ok: false, hata: 'Spiker kapalı' }, ek);
+        const metin = spikerMetni(govde.metin);
+        if (!metin) return gonder(res, 400, { ok: false, hata: 'Boş metin' }, ek);
+        try {
+          const s = await seslendirici.seslendir(metin);
+          res.writeHead(200, { ...GUVENLIK_BASLIKLARI, 'Content-Type': s.tur, 'Cache-Control': 'no-store', ...ek });
+          return res.end(s.veri);
+        } catch (e) {
+          return gonder(res, e.kod || 503, { ok: false, hata: e.message }, ek);
+        }
+      }
       case 'PUT /api/ayarlar': {
         ayarlar = ayarlariDogrula({ ...ayarlar, ...govde });
         ayarlariKaydet(ayarlar, ayarDosyasi);
@@ -280,6 +296,7 @@ export function sunucuKur({ tiktok = new TikTokYoneticisi(), ayarDosyasi, hediye
 
   sunucu.kapat = async () => {
     demo.durdur();
+    seslendirici.kapat();
     await tiktok.kes({ sessiz: true });
     for (const res of istemciler) res.end();
     istemciler.clear();
@@ -303,6 +320,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     console.log('  Cephe Kapışması (TikTok LIVE takım savaşı) çalışıyor');
     console.log(`  Kontrol paneli : http://localhost:${PORT}`);
     console.log(`  Oyun ekranı    : http://127.0.0.1:${PORT}/oyun   (LIVE Studio / OBS, 1080 x 1920)`);
+    console.log('  Oyun seçimi    : panelden (Cephe Kapışması / Futbol Kupası); ekran kendiliğinden değişir');
     console.log('  Kapatmak için bu pencereyi kapat ya da Ctrl+C.');
     console.log('');
   });

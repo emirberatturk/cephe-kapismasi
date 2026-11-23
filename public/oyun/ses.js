@@ -76,7 +76,7 @@ export class Ses {
     if (!this.ctx) return;
     if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
     const simdi = performance.now() + gecikme * 1000;
-    const aralik = { giris: 90, kilic: 70, kalkan: 100, kirik: 80 }[ad] ?? 0;
+    const aralik = { giris: 90, kilic: 70, kalkan: 100, kirik: 80, sut: 60, tezahurat: 400, gol: 600 }[ad] ?? 0;
     if (simdi - (this.son.get(ad) || 0) < aralik) return;
     this.son.set(ad, simdi);
     const g = gecikme;
@@ -145,10 +145,90 @@ export class Ses {
       case 'alarm':
         [0, 0.25, 0.5].forEach((d) => this.ton({ frek: 880, bitis: 660, sure: 0.18, tip: 'square', ses: 0.05, gecikme: g + d }));
         break;
+      case 'duduk': // hakem düdüğü: titreşimli tiz ton
+        this.duduk(g, 0.32);
+        break;
+      case 'uzunDuduk':
+        this.duduk(g, 0.22);
+        this.duduk(g + 0.32, 0.22);
+        this.duduk(g + 0.64, 0.7);
+        break;
+      case 'sut': // topa vuruş: kısa gümleme
+        this.ton({ frek: 140, bitis: 55, sure: 0.12, tip: 'sine', ses: 0.4, gecikme: g });
+        this.gurultu({ sure: 0.07, ses: 0.25, tur: 'lowpass', frek: 1600, bitisFrek: 300, gecikme: g, atak: 0.001 });
+        break;
+      case 'superSut': // vuruş + ıslık gibi hava sesi
+        this.ton({ frek: 160, bitis: 50, sure: 0.16, tip: 'sine', ses: 0.5, gecikme: g });
+        this.gurultu({ sure: 0.09, ses: 0.35, tur: 'lowpass', frek: 2000, bitisFrek: 300, gecikme: g, atak: 0.001 });
+        this.gurultu({ sure: 0.6, ses: 0.18, tur: 'bandpass', frek: 900, bitisFrek: 3200, q: 1.5, gecikme: g + 0.03 });
+        break;
+      case 'gol': // tribün coşkusu + korna
+        this.gurultu({ sure: 2.6, ses: 0.5, tur: 'bandpass', frek: 650, bitisFrek: 900, q: 0.5, gecikme: g, atak: 0.25 });
+        this.gurultu({ sure: 2.2, ses: 0.3, tur: 'lowpass', frek: 1200, bitisFrek: 500, gecikme: g, atak: 0.2 });
+        [0, 0.45].forEach((d) => this.ton({ frek: 233, bitis: 228, sure: 0.38, tip: 'sawtooth', ses: 0.07, gecikme: g + 0.15 + d }));
+        break;
+      case 'kurtaris': // eldivene çarpan top
+        this.ton({ frek: 190, bitis: 90, sure: 0.15, tip: 'sine', ses: 0.35, gecikme: g });
+        this.gurultu({ sure: 0.12, ses: 0.2, tur: 'lowpass', frek: 900, bitisFrek: 200, gecikme: g, atak: 0.002 });
+        break;
+      case 'direk': // metal direk çınlaması
+        this.ton({ frek: 1750, bitis: 1680, sure: 0.5, tip: 'triangle', ses: 0.1, gecikme: g });
+        this.ton({ frek: 2630, bitis: 2560, sure: 0.35, tip: 'triangle', ses: 0.06, gecikme: g });
+        this.ton({ frek: 120, bitis: 60, sure: 0.12, tip: 'sine', ses: 0.3, gecikme: g });
+        break;
+      case 'tezahurat': // tribünden "oooh"
+        this.gurultu({ sure: 1.3, ses: 0.22, tur: 'bandpass', frek: 420, bitisFrek: 300, q: 1.2, gecikme: g, atak: 0.2 });
+        break;
+      case 'havlama': // iki kısa havlama
+        [0, 0.2].forEach((d) => {
+          this.ton({ frek: 560, bitis: 300, sure: 0.11, tip: 'sawtooth', ses: 0.07, gecikme: g + d });
+          this.gurultu({ sure: 0.08, ses: 0.08, tur: 'bandpass', frek: 900, q: 2, gecikme: g + d });
+        });
+        break;
       case 'turSonu':
         [523, 659, 784, 1046].forEach((f, i) => this.ton({ frek: f, sure: 0.25, tip: 'triangle', ses: 0.12, gecikme: g + i * 0.12 }));
         break;
       default:
     }
+  }
+
+  // Sunucudan gelen ses dosyasını (WAV/MP3) çözer
+  async coz(veri) {
+    this.hazirla();
+    if (!this.ctx) throw new Error('ses yok');
+    return this.ctx.decodeAudioData(veri);
+  }
+
+  // Çözülmüş sesi çalar; { bitti: Promise, dur() } döner
+  tamponCal(tampon, duzey = 1) {
+    this.hazirla();
+    if (!this.ctx) return { bitti: Promise.resolve(), dur() {} };
+    if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+    const k = this.ctx.createBufferSource();
+    k.buffer = tampon;
+    const g = this.ctx.createGain();
+    g.gain.value = Math.max(0, Math.min(1.5, duzey * 1.4));
+    k.connect(g).connect(this.cikis);
+    const bitti = new Promise((coz) => (k.onended = coz));
+    k.start();
+    return { bitti, dur: () => { try { k.stop(); } catch { /* bitmiş */ } } };
+  }
+
+  duduk(gecikme, sure) {
+    const c = this.ctx;
+    const t = c.currentTime + gecikme;
+    const o = c.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(2900, t);
+    const lfo = c.createOscillator();
+    lfo.frequency.value = 32;
+    const derinlik = c.createGain();
+    derinlik.gain.value = 140;
+    lfo.connect(derinlik).connect(o.frequency);
+    o.connect(this.zarf(t, 0.09, sure, 0.01)).connect(this.cikis);
+    o.start(t);
+    lfo.start(t);
+    o.stop(t + sure + 0.05);
+    lfo.stop(t + sure + 0.05);
   }
 }

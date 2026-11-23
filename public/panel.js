@@ -11,6 +11,16 @@
     hata: ['Bağlantı hatası', 'hata'],
   };
   const ASAMA = { hazirlik: 'hazırlık', savas: 'savaş', uzatma: 'UZATMA', ara: 'tur arası', duraklat: 'DURAKLATILDI' };
+  const FB_ASAMA = { hazirlik: 'maç öncesi', mac: 'maç', gol: 'GOL', penalti: 'penaltı', seri: 'penaltı atışları', ara: 'maç arası', kupaSonu: 'kupa töreni', duraklat: 'DURAKLATILDI' };
+  // Futbolda komut düğmelerinin adları
+  const FB_KOMUT = {
+    turuBitir: 'Maçı şimdi bitir',
+    yeniTur: 'Maçı baştan başlat / sıradaki maça geç',
+    cilginAn: '⚽⚽ 2 top (çılgın an)',
+    sifirla: ['Kupayı sıfırla', 'Kupa, fikstür ve oyuncular sıfırlansın mı?'],
+    skorSifirla: ['Kupa sayılarını ve gol krallarını sıfırla', 'Kupa sayıları ve gol kralları sıfırlansın mı?'],
+  };
+  const komutAsil = new Map();
   let ayarlar = null;
   const kontrol = { sunucu: false, ekran: 0, sayfa: false, tiktok: false, demo: false };
   function kontrolGuncelle() {
@@ -65,9 +75,36 @@
     kontrolGuncelle();
   }
 
+  function futbolGoster(o) {
+    const f = o.futbol;
+    const takim = (i) => ayarlar.futbol.takimlar[i] || { ad: '?', kisa: '?', renk: '#64748b' };
+    const t = [takim(f.ev), takim(f.dep)];
+    for (let i = 0; i < 2; i++) {
+      const kutu = $(`#t${i}`);
+      kutu.style.borderColor = t[i].renk;
+      kutu.querySelector('.tad').textContent = t[i].ad;
+      kutu.querySelector('.tad').style.color = '';
+      kutu.querySelector('.tgal').textContent = String(f.skor[i]);
+      kutu.querySelector('.task').textContent = `${o.canli[i]} oyuncu sahada`;
+      kutu.querySelector('.tkap').textContent = i === 0 ? `⚡ güç %${f.guc}` : `⚡ güç %${100 - f.guc}`;
+    }
+    const dk = f.dakika ? ` · ${f.dakika}'` : '';
+    const pen = f.pen ? ` · pen. ${f.pen[0]}-${f.pen[1]}` : '';
+    const krallar = f.golKrallari.length ? ` · ⚽ ${f.golKrallari.slice(0, 3).map((k) => `${k.ad} ${k.gol}`).join(', ')}` : '';
+    $('#turMetin').textContent = `${ayarlar.futbol.kupaAdi} #${f.kupa} · ${f.macAdi} · ${FB_ASAMA[o.asama] || o.asama}${dk}${pen}${krallar}${o.demo ? ' · DEMO verisi' : ''}`;
+    const cubuk = $('#cepheCubuk');
+    cubuk.style.width = `${f.guc}%`;
+    cubuk.style.background = t[0].renk;
+    cubuk.parentElement.style.background = t[1].renk;
+  }
+
   function oyunGoster(o) {
     if (!o || !ayarlar || !o.canli) return;
     kontrol.ekran = Date.now();
+    if (o.oyun === 'futbol') {
+      if (ayarlar.futbol) futbolGoster(o);
+      return;
+    }
     for (let t = 0; t < 2; t++) {
       const kutu = $(`#t${t}`);
       kutu.style.borderColor = ayarlar.takimlar[t].renk;
@@ -117,6 +154,10 @@
     const grup = (alt, ust) => HEDIYELER.filter(([, j]) => j >= alt && j < ust).map(([ad, j]) => `${ad} ${j}`).join(', ') || '—';
     $('#kademeOzeti').textContent =
       `🛡️ Kalkan: ${grup(1, e.tufek)} · 🔫 Tüfek: ${grup(e.tufek, e.bomba)} · 💣 Bomba: ${grup(e.bomba, e.ejderha)} · 🐉 Ejderha: ${grup(e.ejderha, Infinity)}`;
+    const fb = { Koruma: Number($('#fbKoruma').value) || 0, SuperSut: Number($('#fbSuperSut').value) || 0, Penalti: Number($('#fbPenalti').value) || 0, Gol: Number($('#fbGol').value) || 0 };
+    for (const ad of Object.keys(fb)) $(`#fb${ad}TL`).textContent = fb[ad] > 0 ? tlYaz(fb[ad], jt) : '';
+    $('#fbKademe').textContent =
+      `💪 Güç: ${grup(1, fb.Koruma)} · 🧤 Koruma: ${grup(fb.Koruma, fb.SuperSut)} · 🔥 Süper şut: ${grup(fb.SuperSut, fb.Penalti)} · 🎯 Penaltı: ${grup(fb.Penalti, fb.Gol)} · ⚡ Gol: ${grup(fb.Gol, Infinity)}`;
   }
 
   function hediyeDugmeleri() {
@@ -132,8 +173,69 @@
     }
   }
 
+  // Futbol takım satırları (8 takım: ad, kısa ad, iki renk)
+  function futbolSatirlari(n) {
+    const kap = $('#fbTakimlar');
+    if (kap.children.length === n) return;
+    kap.replaceChildren();
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('div');
+      s.className = 'fb-takim';
+      const ad = Object.assign(document.createElement('input'), { id: `fbT${i}ad`, maxLength: 16 });
+      ad.setAttribute('aria-label', `${i + 1}. takım adı`);
+      const kisa = Object.assign(document.createElement('input'), { id: `fbT${i}kisa`, maxLength: 5 });
+      kisa.setAttribute('aria-label', `${i + 1}. takım kısa adı`);
+      const r1 = Object.assign(document.createElement('input'), { id: `fbT${i}renk`, type: 'color' });
+      r1.setAttribute('aria-label', `${i + 1}. takım 1. renk`);
+      const r2 = Object.assign(document.createElement('input'), { id: `fbT${i}renk2`, type: 'color' });
+      r2.setAttribute('aria-label', `${i + 1}. takım 2. renk`);
+      s.append(ad, kisa, r1, r2);
+      kap.append(s);
+    }
+  }
+
+  function oyunTuruGoster(tur) {
+    for (const r of document.querySelectorAll('input[name=oyunTuru]')) r.checked = r.value === tur;
+    const futbol = tur === 'futbol';
+    for (const el of document.querySelectorAll('.sadeceCephe')) el.hidden = futbol;
+    for (const el of document.querySelectorAll('.sadeceFutbol')) el.hidden = !futbol;
+    for (const d of document.querySelectorAll('[data-komut]')) {
+      const k = d.dataset.komut;
+      if (!komutAsil.has(k)) komutAsil.set(k, [d.textContent, d.dataset.onay]);
+      const fb = FB_KOMUT[k];
+      const [metin, onay] = futbol && fb ? (Array.isArray(fb) ? fb : [fb, komutAsil.get(k)[1]]) : komutAsil.get(k);
+      d.textContent = metin;
+      if (onay) d.dataset.onay = onay;
+    }
+    $('#b3').textContent = futbol ? '3 · Maç durumu' : '3 · Oyun durumu';
+  }
+
   function ayarlariDoldur(a) {
     ayarlar = a;
+    oyunTuruGoster(a.oyunTuru);
+    const f = a.futbol;
+    futbolSatirlari(f.takimlar.length);
+    $('#fbKupaAdi').value = f.kupaAdi;
+    $('#fbKupaBoyu').value = String(f.kupaBoyu);
+    $('#fbKoruma').value = f.korumaJeton;
+    $('#fbSuperSut').value = f.superSutJeton;
+    $('#fbPenalti').value = f.penaltiJeton;
+    $('#fbGol').value = f.golJeton;
+    $('#fbMacSuresi').value = f.macSuresi;
+    $('#fbHazirlik').value = f.hazirlik;
+    $('#fbAra').value = f.araSuresi;
+    $('#fbSaha').value = f.sahaOyuncu;
+    $('#fbHava').checked = f.hava;
+    $('#fbSurpriz').checked = f.surpriz;
+    $('#spiker').checked = a.spiker;
+    $('#spikerSes').value = a.spikerSes;
+    $('#spikerSesYazi').textContent = `%${a.spikerSes}`;
+    f.takimlar.forEach((t, i) => {
+      $(`#fbT${i}ad`).value = t.ad;
+      $(`#fbT${i}kisa`).value = t.kisa;
+      $(`#fbT${i}renk`).value = t.renk;
+      $(`#fbT${i}renk2`).value = t.renk2;
+    });
     if (a.kullanici && !$('#kullanici').value) $('#kullanici').value = '@' + a.kullanici;
     if (document.activeElement !== $('#yayinSayfasi')) $('#yayinSayfasi').value = a.yayinSayfasi || '';
     kontrol.sayfa = Boolean(a.yayinSayfasi);
@@ -173,6 +275,28 @@
       cilginAn: $('#cilginAn').checked,
       adSuzgeci: $('#adSuzgeci').checked,
       ses: $('#ses').checked,
+      spiker: $('#spiker').checked,
+      spikerSes: sayi('spikerSes'),
+      futbol: {
+        kupaAdi: $('#fbKupaAdi').value,
+        kupaBoyu: $('#fbKupaBoyu').value === 'tum' ? 'tum' : Number($('#fbKupaBoyu').value),
+        korumaJeton: sayi('fbKoruma'),
+        superSutJeton: sayi('fbSuperSut'),
+        penaltiJeton: sayi('fbPenalti'),
+        golJeton: sayi('fbGol'),
+        macSuresi: sayi('fbMacSuresi'),
+        hazirlik: sayi('fbHazirlik'),
+        araSuresi: sayi('fbAra'),
+        sahaOyuncu: sayi('fbSaha'),
+        hava: $('#fbHava').checked,
+        surpriz: $('#fbSurpriz').checked,
+        takimlar: Array.from({ length: $('#fbTakimlar').children.length }, (_, i) => ({
+          ad: $(`#fbT${i}ad`).value,
+          kisa: $(`#fbT${i}kisa`).value,
+          renk: $(`#fbT${i}renk`).value,
+          renk2: $(`#fbT${i}renk2`).value,
+        })),
+      },
     };
   }
 
@@ -207,7 +331,20 @@
     }
   });
   $('#demoKutu').addEventListener('change', (e) => istek('/api/demo', { acik: e.target.checked }).catch(() => {}));
-  for (const id of ['jetonTL', 'tufekJeton', 'bombaJeton', 'ejderhaJeton']) $('#' + id).addEventListener('input', cevrimleriGuncelle);
+  for (const id of ['jetonTL', 'tufekJeton', 'bombaJeton', 'ejderhaJeton', 'fbKoruma', 'fbSuperSut', 'fbPenalti', 'fbGol']) $('#' + id).addEventListener('input', cevrimleriGuncelle);
+  $('#spikerSes').addEventListener('input', () => ($('#spikerSesYazi').textContent = `%${$('#spikerSes').value}`));
+  for (const r of document.querySelectorAll('input[name=oyunTuru]')) {
+    r.addEventListener('change', async () => {
+      const durum = $('#oyunDurum');
+      try {
+        const cevap = await istek('/api/ayarlar', { oyunTuru: r.value }, 'PUT');
+        ayarlariDoldur(cevap.ayarlar);
+        durum.textContent = `Seçildi ✓ ${r.value === 'futbol' ? 'Futbol Kupası' : 'Cephe Kapışması'}. Açık oyun ekranları birkaç saniye içinde bu oyuna geçer.`;
+      } catch (hata) {
+        durum.textContent = 'Kaydedilemedi: ' + hata.message;
+      }
+    });
+  }
   $('#kopyala').addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText($('#obsUrl').textContent);

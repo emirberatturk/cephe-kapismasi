@@ -40,13 +40,15 @@ const hediye = (ad, jeton, kim, adet = 1) => ({ tur: 'hediye', kullanici: kim, h
 const SENARYOLAR = {
   gif: { isinma: 16, sure: 9, yogunluk: 6, olaylar: [[1, hediye('Çay', 60, 'Nişancı')], [3.5, hediye('Elle Kalp', 100, 'Bombacı')], [6.2, hediye('Elmas aşk yüzüğü', 300, 'Ejderhacı')]], anlik: { savas: 0.4, bomba: 4.3, ejderha: 7.4 } },
   tanitim: { isinma: 16, sure: 15, yogunluk: 6, olaylar: [[1.5, hediye('Gül', 1, 'Kalkancı', 3)], [3, hediye('Çay', 60, 'Nişancı')], [6, hediye('Elle Kalp', 100, 'Bombacı')], [9.5, hediye('Taç', 199, 'Kral')], [12, hediye('Elmas aşk yüzüğü', 300, 'Ejderhacı')]] },
-  katilim: { isinma: 1, sure: 14, yogunluk: 9, olaylar: [] },
+  katilim: { isinma: 1, sure: 15, yogunluk: 9, olaylar: [] },
   silahlar: { isinma: 18, sure: 16, yogunluk: 5, olaylar: [[1, hediye('Gül', 1, 'Kalkancı', 5)], [4, hediye('Parfüm', 20, 'Nişancı')], [6, hediye('Çay', 50, 'Nişancı')], [9, hediye('Elle Kalp', 100, 'Bombacı')], [13, hediye('Corgi', 299, 'Bombacı')]] },
   ejderha: { isinma: 20, sure: 8, yogunluk: 5, olaylar: [[1, hediye('Elmas aşk yüzüğü', 300, 'Ejderhacı')]] },
   siralama: { isinma: 20, sure: 12, yogunluk: 5, olaylar: [[0.5, hediye('Taç', 199, 'Kral')], [1.5, hediye('Elle Kalp', 100, 'Bombacı')], [2.5, hediye('Elle Kalp', 100, 'Kraliçe')], [3, { komut: 'turuBitir' }]], anlik: { siralama: 8 } },
-  botlar: { isinma: 18, sure: 10, yogunluk: 0, olaylar: [] },
+  botlar: { isinma: 18, sure: 15, yogunluk: 0, olaylar: [] },
 };
-const senaryo = SENARYOLAR[senaryoAdi];
+// Senaryo adı yerine .json dosyası da verilebilir:
+// { "isinma": 16, "sure": 30, "yogunluk": 6, "ayar": { "botSayisi": 6 }, "olaylar": [[2, { "tur": "hediye", ... }]] }
+const senaryo = senaryoAdi.endsWith('.json') ? JSON.parse(fs.readFileSync(senaryoAdi, 'utf8')) : SENARYOLAR[senaryoAdi];
 if (!senaryo) {
   console.error('Bilinmeyen senaryo. Seçenekler:', Object.keys(SENARYOLAR).join(', '));
   process.exit(1);
@@ -55,7 +57,7 @@ if (!senaryo) {
 // ------------------------------------------------------------ sunucu (geçici ayarlarla)
 const gecici = fs.mkdtempSync(path.join(os.tmpdir(), 'tanitim-'));
 const ayarDosyasi = path.join(gecici, 'ayarlar.json');
-fs.writeFileSync(ayarDosyasi, JSON.stringify({ botlar: true, botSayisi: senaryoAdi === 'botlar' ? 8 : 6, profilFoto: 'hepsi', cilginAn: false }));
+fs.writeFileSync(ayarDosyasi, JSON.stringify({ botlar: true, botSayisi: senaryoAdi === 'botlar' ? 8 : 6, profilFoto: 'hepsi', cilginAn: false, ...(senaryo.ayar || {}) }));
 // TikTok'a bağlanmayan sahte yönetici (olayları biz üretiyoruz)
 const sahteTikTok = Object.assign(new (await import('node:events')).EventEmitter(), {
   durum: { hal: 'bosta', kullanici: '', hata: '', izleyici: 0 },
